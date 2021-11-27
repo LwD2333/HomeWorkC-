@@ -1,0 +1,256 @@
+#include <iostream>
+#include <ctype.h>   //字母转小写库函数
+#include <algorithm> //反转字符串
+
+using namespace std;
+#define MaxSize 51 //Nodelist 最大长度
+
+static int listLenth = 0;
+static int initial = 0;
+
+class Node
+{
+public:
+    char ch;      //字符
+    int data;     //出现次数
+    bool visited; //是否遍历
+    string Huff;  //Huffman编码
+    Node *parent; //
+    Node *lchild;
+    Node *rchild;
+    int line;
+
+    Node();
+    ~Node(){};
+    Node(const char alp, const int times);
+    // int findMinNode(Node *nodelist);
+    friend bool Addlast(Node *nodelist);
+    friend bool Combine(Node *nodelist);
+
+    friend bool readLine(Node *wordTimes, const char *str);
+    // friend bool sortList(Node *nodelist);
+    friend bool checkVisit(const Node *nodelist);
+    friend bool listDataOut(Node *nodelist);
+    friend int findMinNode(const Node *nodelist);
+    //minNum = nodelist最小data结点
+    friend int findSecondminNode(const Node *nodelist, int minNum);
+    friend bool huffMan();
+};
+Node::Node()
+{
+    ch = '\0';
+    data = 0;
+    visited = false;
+    Huff = "\0";
+    parent = NULL;
+    lchild = NULL;
+    rchild = NULL;
+    line = 0;
+}
+Node::Node(const char alp, const int times)
+{
+    ch = alp;
+    data = times;
+    visited = false;
+    parent = 0;
+    lchild = 0;
+    rchild = 0;
+}
+
+int findMinNode(const Node *nodelist)
+{
+    // if(!checkVisit(nodelist)) return -1;//
+    int minNum = -1;
+    for (int i = 0; i < listLenth; i++)
+    {
+        if (!nodelist[i].visited)
+        {
+            minNum = i;
+            break;
+        }
+    }
+    for (int i = 0; i < listLenth; i++)
+    {
+        if (!nodelist[i].visited && nodelist[i].data < nodelist[minNum].data)
+        {
+            minNum = i;
+            // cout << "minNum" << minNum << endl;
+        }
+    }
+    return minNum;
+};
+int findSecondminNode(const Node *nodelist, int minNum)
+{
+    int secondMin = -1;
+    for (int i = 0; i < listLenth; i++)
+    {
+        if (!nodelist[i].visited && i != minNum)
+        {
+            secondMin = i;
+            break;
+        }
+    }
+    for (int i = 0; i < listLenth; i++)
+    {
+        if (!nodelist[i].visited && i != minNum && nodelist[i].data <= nodelist[secondMin].data)
+        {
+            secondMin = i;
+        }
+    }
+    return secondMin;
+};
+
+bool Addlast(Node *nodelist)
+{
+    int a = findMinNode(nodelist);
+    int b = findSecondminNode(nodelist, a);
+    // cout << "1:" << a << endl;
+    // cout << "2:" << b << endl;
+    nodelist[listLenth].lchild = &nodelist[a]; //listLenth+1
+    nodelist[listLenth].rchild = &nodelist[b];
+    nodelist[a].parent = &nodelist[listLenth];
+    nodelist[b].parent = &nodelist[listLenth];
+    nodelist[listLenth].data = nodelist[a].data + nodelist[b].data;
+    nodelist[listLenth].line = listLenth;
+    listLenth++;
+    nodelist[a].visited = true;
+    nodelist[b].visited = true;
+    // cout << 1;
+    return true;
+}
+
+bool readLine(Node *nodelist, const char *str)
+{ //转化字符串
+    for (int i = 0; str[i] != '\0'; i++)
+    {
+        char temp = tolower(str[i]); //全部转化小写字母
+        if (temp >= 'a' && temp <= 'z')
+        {
+            if (initial == 0)
+            {
+                nodelist[0].ch = temp;
+                nodelist[0].data++;
+                nodelist[0].line = 0;
+                initial++;
+                listLenth++;
+                continue;
+            }
+            for (int m = 0; m < initial; m++)
+            {
+                if (temp == nodelist[m].ch)
+                {
+                    nodelist[m].data++;
+                    break;
+                }
+                if (m == initial - 1)
+                {
+                    nodelist[initial].line = initial;
+                    //新字符
+                    nodelist[initial].ch = temp; //lenth+1
+                    nodelist[initial].data++;
+                    initial++; //????????Huffman???
+                    listLenth++;
+                    break;
+                }
+            }
+            //nodelist[0].data = A出现次数
+        }
+    }
+    return true;
+}
+
+bool checkVisit(const Node *nodelist)
+{
+    int notVisited = 0;
+    for (int i = 0; i < listLenth; i++)
+    {
+        if (!nodelist[i].visited)
+        {
+            notVisited++;
+        }
+        if (notVisited == 2)
+        {
+            return true; //至少两个结点尚可结合
+        }
+    }
+    return false;
+}
+
+bool Combine(Node *nodelist)
+{
+    while (checkVisit(nodelist))
+    {
+        Addlast(nodelist);
+    }
+    return true;
+}
+
+bool huffMan(Node *nodelist)
+{
+    for (int i = 0; i < initial; i++)
+    {
+        string huffstr = "\0";
+        Node *p = new Node;
+        Node *q = new Node;
+        p = &nodelist[i];
+        q = &nodelist[i];
+        while (p->parent != NULL)
+        {
+            p = p->parent;
+            if (p->lchild == q)
+            {
+                huffstr += "0";
+            }
+            else
+            {
+                huffstr += "1";
+            }
+            q = p;
+        }
+        reverse(huffstr.begin(), huffstr.end());
+        cout << nodelist[i].ch << ":" << huffstr << endl;
+    }
+    return true;
+}
+
+bool listDataOut(Node *nodelist)
+{
+    cout << "line"
+         << "\tchar"
+         << "\tdata"
+         << "\tParent"
+         << "\tLchild"
+         << "\tRchild" << endl;
+    for (int i = 0; i < listLenth; i++)
+    {
+        cout << nodelist[i].line;
+        cout << "\t" << nodelist[i].ch;
+        cout << "\t" << nodelist[i].data;
+        if (i < listLenth - 1)
+        {
+            cout << "\t" << nodelist[i].parent->line;
+        }
+        else
+        {
+            cout << "\t";
+        }
+        if (i >= initial)
+        {
+            cout << "\t" << nodelist[i].lchild->line;
+            cout << "\t" << nodelist[i].rchild->line;
+        }
+        cout << endl; //data
+    }
+    return true;
+}
+
+int main()
+{
+    string str = "adefFEttRRtraaaaaa";
+    Node nodelist[MaxSize];
+
+    readLine(nodelist, str.c_str());
+    Combine(nodelist);
+    listDataOut(nodelist);
+    huffMan(nodelist);
+}
